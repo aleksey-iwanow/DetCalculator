@@ -17,11 +17,11 @@ void onCellChanged(int, int);
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
     , ui(new Ui::MainWindow) // Инициализация указателя интерфейса
-    , matrix(3, 3) // Инициализация объекта матрицы размером 3x3
+    , matrix(3, 3), currentType(CurrentType::DETERMINITION) // Инициализация объекта матрицы размером 3x3
 {
     ui->setupUi(this); // Настройка пользовательского интерфейса
     initTable(); // Инициализация таблицы
-
+    swapPanel(ui->panelKorni, ui->panelDet);
     // Подключение сигнала изменения ячейки таблицы к слоту
     connect(ui->tableWidget, &QTableWidget::cellChanged, this, [this](int row, int col) {
         onCellChanged(row, col); // Вызов функции обратного вызова при изменении ячейки
@@ -30,7 +30,30 @@ MainWindow::MainWindow(QWidget *parent)
     // Подключение кнопки расчета детерминанта к соответствующему обработчику
     connect(ui->calcDet, &QPushButton::clicked, this, [=] {
         auto res = matrix.calculateDeterminantOfMatrix(); // Расчет детерминанта матрицы
-        ui->resultEdit->setText(QString::number(res)); // Вывод результата в текстовое поле
+        ui->detEdit->setText(QString::number(res)); // Вывод результата в текстовое поле
+    });
+
+    connect(ui->calcKorni, &QPushButton::clicked, this, [=] {
+        auto res = matrix.calculateRootsOfMatrix();
+        QString out = " : ";
+        for (auto &el : res){
+            out += QString::number(el) + " : ";
+        }
+        ui->korniEdit->setText(out); // Вывод результата в текстовое поле
+    });
+
+    connect(ui->selectDet, &QPushButton::clicked, this, [=] {
+        if (currentType == CurrentType::DETERMINITION) return;
+        currentType = CurrentType::DETERMINITION;
+        changeCol(-1);
+        swapPanel(ui->panelKorni, ui->panelDet);
+    });
+
+    connect(ui->selectKorni, &QPushButton::clicked, this, [=] {
+        if (currentType == CurrentType::ROOTS) return;
+        currentType = CurrentType::ROOTS;
+        changeCol(1);
+        swapPanel(ui->panelDet, ui->panelKorni);
     });
 
     // Подключение кнопки добавления столбца к соответствующему обработчику
@@ -66,6 +89,11 @@ MainWindow::MainWindow(QWidget *parent)
 void MainWindow::adjustTable() {
     ui->tableWidget->resizeRowsToContents(); // Автоматическое изменение высоты строк
     ui->tableWidget->resizeColumnsToContents(); // Автоматическое изменение ширины столбцов
+}
+
+void MainWindow::swapPanel(QWidget* panelDis, QWidget* panelAct){
+    panelDis->hide();
+    panelAct->show();
 }
 
 // Метод для изменения количества строк в таблице
@@ -121,7 +149,7 @@ void MainWindow::onCellChanged(int row, int col) {
         auto newText = stringToDigit(text.toStdString()); // Преобразование текста в числовой формат
         item->setText(QString::fromStdString(newText)); // Установка преобразованного текста обратно в ячейку
         ui->tableWidget->resizeRowsToContents(); // Корректировка высоты строк
-        matrix.setElement(row, col, text.toDouble()); // Обновление значения в объекте матрицы
+        matrix.setElement(row, col, text.toInt()); // Обновление значения в объекте матрицы
     }
 }
 

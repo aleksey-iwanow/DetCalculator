@@ -3,6 +3,7 @@
 
 #include <QMainWindow>
 #include "matrix.h"
+#include "currenttype.cpp"
 
 QT_BEGIN_NAMESPACE
 namespace Ui {
@@ -15,6 +16,7 @@ class MainWindow : public QMainWindow
     Q_OBJECT
 
 public:
+    // Конструктор главного окна приложения
     explicit MainWindow(QWidget *parent = nullptr);
     ~MainWindow();
     Matrix matrix;
@@ -26,6 +28,7 @@ public:
 
 private:
     Ui::MainWindow *ui;
-
+    CurrentType currentType;
+    void swapPanel(QWidget* panelDis, QWidget* panelAct);
 };
 #endif // MAINWINDOW_H

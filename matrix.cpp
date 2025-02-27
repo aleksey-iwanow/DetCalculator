@@ -10,21 +10,20 @@ Matrix::Matrix() : Matrix::Matrix(1, 1) {}
 Matrix::Matrix(int rows, int columns) :
     rows(rows), // Инициализация количества строк
     columns(columns), // Инициализация количества столбцов
-    elements(rows, std::vector<double>(columns)) {} // Создание двумерного вектора элементов
+    elements(rows, std::vector<int>(columns)) {} // Создание двумерного вектора элементов
 
 // Метод установки значения элемента матрицы по заданным координатам.
-void Matrix::setElement(int r, int c, double value) {
+void Matrix::setElement(int r, int c, int value) {
     // Проверка индексов на выход за границы матрицы.
     if (r >= 0 && r < rows && c >= 0 && c < columns) {
         elements[r][c] = value; // Установка значения элемента
     } else {
         throw std::out_of_range("Invalid index"); // Исключение при выходе за пределы матрицы
     }
-    display(); // Отображение текущей матрицы после изменения
 }
 
 // Метод получения значения элемента матрицы по заданным координатам.
-double Matrix::get(int row, int col) {
+int Matrix::get(int row, int col) {
     return elements[row][col]; // Возврат значения элемента
 }
 
@@ -45,20 +44,27 @@ int Matrix::getCols() {
 }
 
 // Метод отображения матрицы на экране.
-void Matrix::display() {
-    for (int y = 0; y < rows; y++) { // Перебор строк
-        for (int x = 0; x < columns; x++) { // Перебор столбцов
-            std::cout << elements[y][x] << " "; // Вывод значения элемента
-        }
-        std::cout << std::endl; // Переход на новую строку после каждой строки матрицы
+void Matrix::display(std::vector<std::vector<int>> &els) {
+    std::cout << "-----------------------------------" << std::endl;
+    for (int y = 0; y < els.size(); y++) { // Перебор строк
+        display(els[y]);
     }
 }
+
+void Matrix::display(std::vector<int> &els) {
+
+    for (int x = 0; x < els.size(); x++) { // Перебор столбцов
+        std::cout << els[x] << " "; // Вывод значения элемента
+    }
+    std::cout << std::endl; // Переход на новую строку после каждой строки матрицы
+}
+
 
 // Метод добавления или удаления строк матрицы.
 void Matrix::resizeRows(int k) {
     rows += k; // Увеличение или уменьшение количества строк
     if (k > 0) {
-        elements.push_back(std::vector<double>(columns)); // Добавление новой строки
+        elements.push_back(std::vector<int>(columns)); // Добавление новой строки
     } else {
         elements.pop_back(); // Удаление последней строки
     }
@@ -73,37 +79,70 @@ void Matrix::resizeColumns(int k) {
 }
 
 // Рекурсивная функция для вычисления детерминанта матрицы.
-double Matrix::funcDet(std::vector<std::vector<double> > elms) {
-    int r = elms.size(); // Количество строк
-    int c = elms[0].size(); // Количество столбцов
+long Matrix::funcDet(const std::vector<std::vector<int>>& elms) {
+    int n = elms.size(); // Количество строк (или столбцов, предполагаем квадратную матрицу)
 
-    if (r == 1 && c == 1) {
+    if (n == 1) {
         return elms[0][0]; // Детерминант для матрицы 1x1
-    } else if (r == 2 && c == 2) {
+    } else if (n == 2) {
         return elms[0][0] * elms[1][1] - elms[1][0] * elms[0][1]; // Детерминант для матрицы 2x2
     } else {
-        double result{}; // Переменная для накопления результата
-        for (int i = 0; i < c; i++) {
-            double el = elms[0][i]; // Элемент первой строки
-            std::vector<std::vector<double>> newChildMatrix{}; // Новая подматрица
-            for (int j = 1; j < r; j++) {
-                std::vector<double> rowVector; // Строка новой подматрицы
-                for (int i2 = 0; i2 < c; i2++) {
-                    if (i2 == i) continue; // Пропускаем текущий столбец
-                    rowVector.push_back(elms[j][i2]); // Заполнение строки новыми значениями
-                }
-                newChildMatrix.push_back(rowVector); // Добавление строки в подматрицу
-            }
-            result += el * std::pow(-1, 2 + i) * funcDet(newChildMatrix); // Вычисление рекурсивного шага
+        long result = 0; // Переменная для накопления результата
+        for (int i = 0; i < n; i++) {
+            long cofactor = elms[0][i] * funcDet(getMinor(elms, 0, i));
+            result += (i % 2 == 0 ? cofactor : -cofactor); // Учет знака
         }
         return result; // Возвращение накопленного результата
     }
-    return NAN; // Значение NaN, если размер матрицы некорректен
+}
+
+// Функция для получения минорной матрицы
+std::vector<std::vector<int>> Matrix::getMinor(const std::vector<std::vector<int>>& elms, int row, int col) {
+    int n = elms.size();
+    std::vector<std::vector<int>> minor(n - 1, std::vector<int>(n - 1));
+    for (int i = 0; i < n; i++) {
+        for (int j = 0; j < n; j++) {
+            if (i != row && j != col) {
+                minor[i - (i > row ? 1 : 0)][j - (j > col ? 1 : 0)] = elms[i][j];
+            }
+        }
+    }
+    return minor;
 }
 
 // Метод вычисления детерминанта матрицы.
-double Matrix::calculateDeterminantOfMatrix() {
+long Matrix::calculateDeterminantOfMatrix() {
     return funcDet(elements); // Вызов функции для вычисления детерминанта
+}
+
+void Matrix::swapElements(std::vector<std::vector<int>>& currentMatrix, const std::vector<int> &vector, int col){
+    for (int i = 0; i < currentMatrix.size(); i++){
+        currentMatrix[i][col] = vector[i];
+    }
+}
+
+std::vector<double> Matrix::calculateRootsOfMatrix(){
+    auto allA (elements);
+    std::vector<int> allB {};
+    std::vector<double> allRoots {};
+
+    for (auto &row : allA) {
+        allB.push_back(row.back());
+        row.pop_back();
+    }
+    display(allB);
+    display(allA);
+    long detAllA = funcDet(allA);
+    if (detAllA == 0) return allRoots;
+
+    for (int i = 0; i < allA[0].size(); i++){
+        auto currentSwapMatrix (allA);
+        swapElements(currentSwapMatrix, allB, i);
+        display(currentSwapMatrix);
+        long currentDet = funcDet(currentSwapMatrix);
+        allRoots.push_back(currentDet / detAllA);
+    }
+    return allRoots;
 }
 
 // Деструктор класса Matrix.
